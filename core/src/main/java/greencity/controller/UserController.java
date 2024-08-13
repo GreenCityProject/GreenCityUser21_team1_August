@@ -14,7 +14,6 @@ import greencity.dto.user.*;
 import greencity.enums.EmailNotification;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
-import greencity.exception.handler.ExceptionResponse;
 import greencity.exception.handler.ValidationExceptionDto;
 import greencity.service.EmailService;
 import greencity.service.UserService;
@@ -37,8 +36,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
-
-import java.awt.*;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
