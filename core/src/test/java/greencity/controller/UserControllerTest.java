@@ -287,7 +287,7 @@ class UserControllerTest {
     void deleteUserProfilePicture_WithValidPrincipal_ProfilePictureDeleted() throws Exception {
         // Arrange
         Principal principal = mock(Principal.class);
-        when(principal.getName()).thenReturn("andriy123p@gmail.com");
+        when(principal.getName()).thenReturn("andriy123@gmail.com");
 
         // Act
         mockMvc.perform(patch("/user/deleteProfilePicture")
@@ -300,8 +300,7 @@ class UserControllerTest {
     @Test
     void deleteUserProfilePicture_PrincipalIsNull_ReturnsUnauthorized() throws Exception {
         // Act
-        mockMvc.perform(patch("/user/deleteProfilePicture")
-                        .principal(null))
+        mockMvc.perform(patch("/user/deleteProfilePicture"))
                 .andExpect(status().isUnauthorized());
 
         verify(userService, never()).deleteUserProfilePicture(anyString());
