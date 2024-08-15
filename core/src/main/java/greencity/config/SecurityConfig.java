@@ -110,6 +110,8 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/swagger-ui/**")
                         .permitAll()
+                        .requestMatchers("/error")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/ownSecurity/verifyEmail",
                                 "/ownSecurity/updateAccessToken",
