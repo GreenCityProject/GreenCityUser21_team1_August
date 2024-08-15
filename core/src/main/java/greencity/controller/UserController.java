@@ -14,6 +14,8 @@ import greencity.dto.user.*;
 import greencity.enums.EmailNotification;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
+import greencity.exception.exceptions.BadUpdateRequestException;
+import greencity.exception.exceptions.LowRoleLevelException;
 import greencity.service.EmailService;
 import greencity.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -72,10 +74,16 @@ public class UserController {
     @PatchMapping("status")
     public ResponseEntity<UserStatusDto> updateStatus(
             @Valid @RequestBody UserStatusDto userStatusDto, @ApiIgnore Principal principal) {
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(
-                        userService.updateStatus(
-                                userStatusDto.getId(), userStatusDto.getUserStatus(), principal.getName()));
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+            UserStatusDto updatedStatus = userService.updateStatus(
+                    userStatusDto.getId(), userStatusDto.getUserStatus(), principal.getName());
+            return ResponseEntity.status(HttpStatus.OK).body(updatedStatus);
+        } catch (BadUpdateRequestException | LowRoleLevelException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
     /**
