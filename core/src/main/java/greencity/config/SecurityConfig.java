@@ -190,7 +190,7 @@ public class SecurityConfig {
                                 "/user/shopping-list-items/user-shopping-list-items",
                                 "/user/shopping-list-items")
                         .hasAnyRole(USER, ADMIN, UBS_EMPLOYEE, MODERATOR, EMPLOYEE)
-                        .requestMatchers(HttpMethod.GET,
+                        .requestMatchers(HttpMethod.GET, USER_LINK,
                                 "/user/all",
                                 "/user/roles",
                                 "/user/findUserForManagement",
