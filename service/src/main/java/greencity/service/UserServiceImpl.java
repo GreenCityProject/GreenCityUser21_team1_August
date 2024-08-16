@@ -478,9 +478,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserVO updateUserProfilePicture(MultipartFile image, String email,
         String base64) {
-        User user = userRepo
-            .findByEmail(email)
-            .orElseThrow(() -> new WrongEmailException(ErrorMessage.USER_NOT_FOUND_BY_EMAIL + email));
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new WrongEmailException(ErrorMessage.USER_NOT_FOUND_BY_EMAIL + email));
+        if(image == null &&  base64 == null){
+            throw new BadRequestException("Image or base64 must be provided");
+        }
         if (base64 != null) {
             image = modelMapper.map(base64, MultipartFile.class);
         }
