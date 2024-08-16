@@ -202,6 +202,7 @@ public class SecurityConfig {
                         .hasAnyRole(UBS_EMPLOYEE)
                         .requestMatchers(HttpMethod.POST,
                                 "/user/filter",
+                                "/user/search",
                                 "/ownSecurity/register")
                         .hasAnyRole(ADMIN)
                         .requestMatchers(HttpMethod.PATCH,
