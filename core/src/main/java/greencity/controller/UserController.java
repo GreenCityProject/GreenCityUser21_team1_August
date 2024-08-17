@@ -14,6 +14,7 @@ import greencity.dto.user.*;
 import greencity.enums.EmailNotification;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
+import greencity.exception.exceptions.WrongIdException;
 import greencity.service.EmailService;
 import greencity.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,7 @@ import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
@@ -291,8 +294,8 @@ public class UserController {
     @PatchMapping(path = "/profilePicture")
     public ResponseEntity<HttpStatus> updateUserProfilePicture(
         @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
-        @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
-        @ApiIgnore @AuthenticationPrincipal Principal principal) {
+            @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
+        Principal principal) {
         String email = principal.getName();
         userService.updateUserProfilePicture(image, email, base64);
         return ResponseEntity.status(HttpStatus.OK).build();
@@ -412,8 +415,9 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
     })
     @GetMapping("/findByEmail")
-    public ResponseEntity<UserVO> findByEmail(@RequestParam String email) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.findByEmail(email));
+    public ResponseEntity<UserVO> findByEmail(@RequestParam @Email String email) {
+        UserVO user = userService.findByEmail(email);
+        return ResponseEntity.status(HttpStatus.OK).body(user);
     }
 
     /**
@@ -427,10 +431,15 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
         @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
         @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+            @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND)
     })
     @GetMapping("/findById")
     public ResponseEntity<UserVO> findById(@RequestParam Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.findById(id));
+        Optional<UserVO> optionalUser = Optional.ofNullable(userService.findById(id));
+        if (optionalUser.isEmpty()) {
+            throw new WrongIdException(STR."User with id \{id} not found");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(optionalUser.get());
     }
 
     /**
@@ -560,6 +569,7 @@ public class UserController {
     public ResponseEntity<Object> updateUserLastActivityTime(@ApiIgnore @CurrentUser UserVO userVO,
         @PathVariable(value = "date") @DateTimeFormat(
             pattern = "yyyy-MM-dd.HH:mm:ss.SSSSSS") LocalDateTime userLastActivityTime) {
+
         userService.updateUserLastActivityTime(userVO.getId(), userLastActivityTime);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
