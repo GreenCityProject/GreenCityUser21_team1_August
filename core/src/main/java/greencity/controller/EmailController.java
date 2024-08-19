@@ -3,11 +3,16 @@ package greencity.controller;
 import greencity.constant.HttpStatuses;
 import greencity.dto.econews.EcoNewsForSendEmailDto;
 import greencity.dto.notification.NotificationDto;
+import greencity.dto.user.UserVO;
 import greencity.dto.violation.UserViolationMailDto;
+import greencity.exception.exceptions.BadVerifyEmailTokenException;
+import greencity.exception.exceptions.NotFoundException;
+import greencity.exception.exceptions.WrongEmailException;
 import greencity.message.SendChangePlaceStatusEmailMessage;
 import greencity.message.SendHabitNotification;
 import greencity.message.SendReportEmailMessage;
 import greencity.service.EmailService;
+import greencity.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -17,13 +22,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+import java.util.regex.Pattern;
+
 @RestController
 @RequestMapping("/email")
 @AllArgsConstructor
 public class EmailController {
     @Autowired
     private final EmailService emailService;
-
+    private final UserService userService;
     /**
      * Method for sending news for users who subscribed for updates.
      *
@@ -56,11 +64,32 @@ public class EmailController {
      * @param message - object with all necessary data for sending email
      * @author Taras Kavkalo
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
+            @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
+            @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+            @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND),
+    })
     @PostMapping("/changePlaceStatus")
-    public ResponseEntity<Object> changePlaceStatus(@RequestBody SendChangePlaceStatusEmailMessage message) {
-        emailService.sendChangePlaceStatusEmail(message.getAuthorFirstName(), message.getPlaceName(),
-            message.getPlaceStatus(), message.getAuthorEmail());
-        return ResponseEntity.status(HttpStatus.OK).build();
+    public ResponseEntity<Object> changePlaceStatus(@RequestBody SendChangePlaceStatusEmailMessage message, Principal principal) {
+        Pattern emailPattern = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$",
+                Pattern.CASE_INSENSITIVE);
+
+        if (!emailPattern.matcher(message.getAuthorEmail()).matches()) {
+            throw new WrongEmailException("Email is not valid");
+        }
+
+        UserVO user = userService.findByEmail(message.getAuthorEmail());
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        if (principal == null || !principal.getName().equals(message.getAuthorEmail())) {
+            throw new BadVerifyEmailTokenException("Unauthorized");
+        }
+
+        emailService.sendChangePlaceStatusEmail(message.getAuthorFirstName(), message.getPlaceName(), message.getPlaceStatus(), message.getAuthorEmail());
+        return ResponseEntity.ok().build();
     }
 
     /**
