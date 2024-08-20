@@ -72,7 +72,11 @@ public class EmailController {
     })
     @PostMapping("/changePlaceStatus")
     public ResponseEntity<Object> changePlaceStatus(@RequestBody SendChangePlaceStatusEmailMessage message, Principal principal) {
-        validateRequest(message, principal);
+        UserVO user = userService.findByEmail(message.getAuthorEmail());
+
+        if (principal == null || !principal.getName().equals(message.getAuthorEmail())) {
+            throw new BadVerifyEmailTokenException("Unauthorized");
+        }
 
         emailService.sendChangePlaceStatusEmail(
                 message.getAuthorFirstName(),
