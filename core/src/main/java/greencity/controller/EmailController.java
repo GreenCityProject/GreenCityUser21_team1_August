@@ -1,5 +1,6 @@
 package greencity.controller;
 
+import greencity.constant.ErrorMessage;
 import greencity.constant.HttpStatuses;
 import greencity.dto.econews.EcoNewsForSendEmailDto;
 import greencity.dto.notification.NotificationDto;
@@ -75,7 +76,7 @@ public class EmailController {
         UserVO user = userService.findByEmail(message.getAuthorEmail());
 
         if (principal == null || !principal.getName().equals(user.getEmail())) {
-            throw new BadVerifyEmailTokenException("Unauthorized");
+            throw new BadVerifyEmailTokenException(ErrorMessage.USER_IS_UNAUTHORIZED);
         }
 
         emailService.sendChangePlaceStatusEmail(
