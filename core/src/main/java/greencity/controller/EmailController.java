@@ -134,23 +134,4 @@ public class EmailController {
         emailService.sendNotificationByEmail(notification, email);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
-
-    private void validateRequest(SendChangePlaceStatusEmailMessage message, Principal principal) {
-        if (!isValidEmail(message.getAuthorEmail())) {
-            throw new WrongEmailException("Email is not valid");
-        }
-
-        UserVO user = userService.findByEmail(message.getAuthorEmail());
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        if (principal == null || !principal.getName().equals(message.getAuthorEmail())) {
-            throw new BadVerifyEmailTokenException("Unauthorized");
-        }
-    }
-    private boolean isValidEmail(String email) {
-        Pattern emailPattern = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
-        return emailPattern.matcher(email).matches();
-    }
 }
