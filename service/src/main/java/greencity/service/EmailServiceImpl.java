@@ -15,7 +15,6 @@ import greencity.dto.user.UserDeactivationReasonDto;
 import greencity.dto.violation.UserViolationMailDto;
 import greencity.entity.User;
 import greencity.exception.exceptions.NotFoundException;
-import greencity.exception.exceptions.WrongEmailException;
 import greencity.repository.UserRepo;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -33,7 +32,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Executor;
-import java.util.regex.Pattern;
 
 /**
  * {@inheritDoc}
