@@ -31,7 +31,6 @@ public final class ErrorMessage {
     public static final String USER_CREATED = "User is not activated";
     public static final String USER_EMAIL_IS_NOT_VERIFIED = "The user's email address has not been verified.";
     public static final String INCORRECT_PASSWORD = "Incorrect password";
-    public static final String EMAIL_IS_INVALID = "Email is invalid";
     public static final String USER_IS_UNAUTHORIZED = "User is not authorized";
 
     private ErrorMessage() {

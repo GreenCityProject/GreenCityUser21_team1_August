@@ -40,7 +40,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -162,16 +161,8 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserVO findByEmail(String email) {
-        if (!isValidEmail(email)) {
-            throw new WrongEmailException(ErrorMessage.EMAIL_IS_INVALID);
-        }
-
         Optional<User> optionalUser = userRepo.findByEmail(email);
-        if (optionalUser.isEmpty()) {
-            throw new NotFoundException(ErrorMessage.USER_NOT_FOUND_BY_EMAIL + email);
-        }
-
-        return modelMapper.map(optionalUser.get(), UserVO.class);
+        return optionalUser.isEmpty() ? null : modelMapper.map(optionalUser.get(), UserVO.class);
     }
 
     /**
@@ -768,10 +759,5 @@ public class UserServiceImpl implements UserService {
         }
 
         throw new LowRoleLevelException("You do not have authorities");
-    }
-
-    private boolean isValidEmail(String email) {
-        Pattern emailPattern = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
-        return emailPattern.matcher(email).matches();
     }
 }

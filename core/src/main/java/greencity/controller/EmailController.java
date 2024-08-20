@@ -17,11 +17,13 @@ import greencity.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.security.Principal;
 import java.util.regex.Pattern;
@@ -72,10 +74,9 @@ public class EmailController {
             @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND),
     })
     @PostMapping("/changePlaceStatus")
-    public ResponseEntity<Object> changePlaceStatus(@RequestBody SendChangePlaceStatusEmailMessage message, Principal principal) {
-        UserVO user = userService.findByEmail(message.getAuthorEmail());
+    public ResponseEntity<Object> changePlaceStatus(@Valid @RequestBody SendChangePlaceStatusEmailMessage message, @ApiIgnore Principal principal) {
 
-        if (principal == null || !principal.getName().equals(user.getEmail())) {
+        if (principal == null) {
             throw new BadVerifyEmailTokenException(ErrorMessage.USER_IS_UNAUTHORIZED);
         }
 
