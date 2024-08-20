@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 public class EmailController {
     @Autowired
     private final EmailService emailService;
-    private final UserService userService;
+
     /**
      * Method for sending news for users who subscribed for updates.
      *
