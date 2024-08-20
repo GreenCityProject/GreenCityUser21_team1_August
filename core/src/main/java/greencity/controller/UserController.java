@@ -33,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.validation.annotation.Validated;
@@ -305,12 +306,15 @@ public class UserController {
     public ResponseEntity<HttpStatus> updateUserProfilePicture(
             @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
             @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
-            @ApiIgnore @AuthenticationPrincipal Principal principal) {
-        String email = principal.getName();
+            @ApiIgnore Authentication authentication) {
+        if(authentication == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String email = (String) authentication.getPrincipal();
         userService.updateUserProfilePicture(image, email, base64);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
-
+    
     /**
      * Delete user profile picture {@link UserVO}.
      *
