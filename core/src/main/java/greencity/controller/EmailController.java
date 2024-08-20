@@ -74,7 +74,7 @@ public class EmailController {
     public ResponseEntity<Object> changePlaceStatus(@RequestBody SendChangePlaceStatusEmailMessage message, Principal principal) {
         UserVO user = userService.findByEmail(message.getAuthorEmail());
 
-        if (principal == null || !principal.getName().equals(message.getAuthorEmail())) {
+        if (principal == null || !principal.getName().equals(user.getEmail())) {
             throw new BadVerifyEmailTokenException("Unauthorized");
         }
 
