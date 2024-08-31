@@ -6,6 +6,7 @@ import greencity.constant.LogMessage;
 import greencity.dto.category.CategoryDto;
 import greencity.dto.econews.AddEcoNewsDtoResponse;
 import greencity.dto.econews.EcoNewsForSendEmailDto;
+import greencity.dto.event.EventSendEmailDto;
 import greencity.dto.newssubscriber.NewsSubscriberResponseDto;
 import greencity.dto.notification.NotificationDto;
 import greencity.dto.place.PlaceNotificationDto;
@@ -137,6 +138,25 @@ public class EmailServiceImpl implements EmailService {
         }
         String template = createEmailTemplate(model, EmailConstants.NEWS_RECEIVE_EMAIL_PAGE);
         sendEmail(newDto.getAuthor().getEmail(), EmailConstants.CREATED_NEWS, template);
+    }
+
+    @Override
+    public void sendCreatedEventForAuthor(EventSendEmailDto eventDto) {
+        // Creating a model for the email template
+        Map<String, Object> model = new HashMap<>();
+        model.put(EmailConstants.EVENT_RESULT, eventDto);
+        try {
+            model.put(EmailConstants.UNSUBSCRIBE_LINK, serverLink + "/newSubscriber/unsubscribe?email="
+                    + URLEncoder.encode(eventDto.getAuthor().getEmail(), StandardCharsets.UTF_8.toString())
+                    + "&unsubscribeToken=" + eventDto.getSecureToken());
+        } catch (UnsupportedEncodingException e) {
+            log.error(e.getMessage());
+        }
+        // Create the email template
+        String template = createEmailTemplate(model, EmailConstants.EVENT_EMAIL_PAGE);
+
+        // Send the email
+        sendEmail(eventDto.getAuthor().getEmail(), EmailConstants.CREATED_EVENT, template);
     }
 
     /**
