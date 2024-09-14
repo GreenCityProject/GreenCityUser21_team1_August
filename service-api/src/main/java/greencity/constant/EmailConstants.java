@@ -17,7 +17,6 @@ public final class EmailConstants {
     public static final String VIOLATION_EMAIL = "Violation email";
     // params
     public static final String CLIENT_LINK = "clientLink";
-    public static final String SERVER_LINK = "serverLink";
     public static final String USER_NAME = "name";
     public static final String VERIFY_ADDRESS = "verifyAddress";
     public static final String RESTORE_PASS = "restorePassword";
@@ -30,7 +29,6 @@ public final class EmailConstants {
     public static final String UNSUBSCRIBE_LINK = "unsubscribeLink";
     public static final String NEWS_RESULT = "news";
     public static final String EVENT_RESULT = "event";
-    public static final String EVENT_COMMENT_LINK = "event-comment-link";
     public static final String REASONS = "reasons";
     public static final String DESCRIPTION = "description";
     public static final String LANGUAGE = "language";
@@ -43,6 +41,7 @@ public final class EmailConstants {
     public static final String CHANGE_PLACE_STATUS_EMAIL_PAGE = "change-place-status-email-page";
     public static final String NEWS_RECEIVE_EMAIL_PAGE = "news-receive-email-page";
     public static final String EVENT_EMAIL_PAGE = "event-created-email-page";
+    public static final String EVENT_COMMENT_EMAIL_PAGE = "event-comment-created-email-page";
     public static final String NEW_PLACES_REPORT_EMAIL_PAGE = "new-places-report-email-page";
     public static final String REASONS_OF_DEACTIVATION_PAGE = "user-reasons-of-deactivation-page";
     public static final String ACTIVATION_PAGE = "user-activation-page";

@@ -1,9 +1,11 @@
 package greencity.service;
 
 import greencity.ModelUtils;
+import greencity.constant.EmailConstants;
 import greencity.dto.category.CategoryDto;
 import greencity.dto.econews.AddEcoNewsDtoResponse;
 import greencity.dto.econews.EcoNewsForSendEmailDto;
+import greencity.dto.event.EventCommentSendEmailDto;
 import greencity.dto.newssubscriber.NewsSubscriberResponseDto;
 import greencity.dto.notification.NotificationDto;
 import greencity.dto.place.PlaceNotificationDto;
@@ -28,10 +30,13 @@ import java.util.*;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
 
 class EmailServiceImplTest {
     private EmailService service;
@@ -199,5 +204,25 @@ class EmailServiceImplTest {
         when(userRepo.findByEmail(anyString())).thenReturn(Optional.empty());
         NotificationDto dto = NotificationDto.builder().title("title").body("body").build();
         assertThrows(NotFoundException.class, () -> service.sendNotificationByEmail(dto, "test@gmail.com"));
+    }
+
+    @Test
+    void sendNotificationToTheOrganizerAboutTheComment(){
+        EventCommentSendEmailDto eventCommentSendEmailDto = EventCommentSendEmailDto.builder()
+                .author(PlaceAuthorDto.builder().email("testEmail@gmail.com").build())
+                .eventTitle("Test Event")
+                .commentText("Test comment")
+                .build();
+
+        Map<String, Object> model = new HashMap<>();
+        model.put(EmailConstants.EVENT_RESULT, eventCommentSendEmailDto);
+
+        String expectedCommentLink = "http://localhost:8080/email/code-stub.html";
+        eventCommentSendEmailDto.setCommentLink(expectedCommentLink);
+
+        service.sendNotificationToTheOrganizerAboutTheComment(eventCommentSendEmailDto);
+
+        verify(javaMailSender).createMimeMessage();
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
 }
