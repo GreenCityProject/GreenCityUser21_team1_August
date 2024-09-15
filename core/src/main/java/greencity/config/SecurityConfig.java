@@ -110,13 +110,15 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/swagger-ui/**")
                         .permitAll()
+                        .requestMatchers("/error")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/ownSecurity/verifyEmail",
                                 "/ownSecurity/updateAccessToken",
                                 "/ownSecurity/restorePassword",
                                 "/googleSecurity",
                                 "/facebookSecurity/generateFacebookAuthorizeURL",
-                                "/facebookSecurity/facebook", "/user/emailNotifications",
+                                "/facebookSecurity/facebook",
                                 "/user/activatedUsersAmount",
                                 "/user/{userId}/habit/assign",
                                 "/token",
@@ -130,7 +132,7 @@ public class SecurityConfig {
                                 "/ownSecurity/signIn",
                                 "/ownSecurity/updatePassword")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, USER_LINK,
+                        .requestMatchers(HttpMethod.GET,
                                 "/user/shopping-list-items/habits/{habitId}/shopping-list",
                                 "/user/{userId}/{habitId}/custom-shopping-list-items/available",
                                 "/user/{userId}/profile/", "/user/isOnline/{userId}/",
@@ -190,7 +192,7 @@ public class SecurityConfig {
                                 "/user/shopping-list-items/user-shopping-list-items",
                                 "/user/shopping-list-items")
                         .hasAnyRole(USER, ADMIN, UBS_EMPLOYEE, MODERATOR, EMPLOYEE)
-                        .requestMatchers(HttpMethod.GET,
+                        .requestMatchers(HttpMethod.GET, USER_LINK,
                                 "/user/all",
                                 "/user/roles",
                                 "/user/findUserForManagement",
@@ -202,6 +204,7 @@ public class SecurityConfig {
                         .hasAnyRole(UBS_EMPLOYEE)
                         .requestMatchers(HttpMethod.POST,
                                 "/user/filter",
+                                "/user/search",
                                 "/ownSecurity/register")
                         .hasAnyRole(ADMIN)
                         .requestMatchers(HttpMethod.PATCH,
