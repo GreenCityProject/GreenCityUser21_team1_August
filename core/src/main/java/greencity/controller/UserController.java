@@ -262,7 +262,7 @@ public class UserController {
     }
 
     /**
-     * Counts all users by user {@link UserStatus} ACTIVATEDd
+     * Counts all users by user {@link UserStatus} ACTIVATED
      *
      * @return amount of users with {@link UserStatus} ACTIVATED.
      * @author Shevtsiv Rostyslav
@@ -399,11 +399,14 @@ public class UserController {
     })
     @GetMapping("/{userId}/profileStatistics/")
     public ResponseEntity<UserProfileStatisticsDto> getUserProfileStatistics(
-            @PathVariable Long userId
-            , @Parameter(description = "Id of current user. Cannot be empty.") @CurrentUserId Long currentUserId) {
-        if (!currentUserId.equals(userId)) {
+            @PathVariable Long userId,
+            @Parameter(description = "Current authenticated user." , hidden = true)
+            @CurrentUser UserVO currentUser) {
+
+        if (!currentUser.getId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(userService.getUserProfileStatistics(userId));
     }
