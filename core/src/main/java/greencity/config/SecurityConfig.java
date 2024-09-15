@@ -118,7 +118,7 @@ public class SecurityConfig {
                                 "/ownSecurity/restorePassword",
                                 "/googleSecurity",
                                 "/facebookSecurity/generateFacebookAuthorizeURL",
-                                "/facebookSecurity/facebook", "/user/emailNotifications",
+                                "/facebookSecurity/facebook",
                                 "/user/activatedUsersAmount",
                                 "/user/{userId}/habit/assign",
                                 "/token",
@@ -192,7 +192,7 @@ public class SecurityConfig {
                                 "/user/shopping-list-items/user-shopping-list-items",
                                 "/user/shopping-list-items")
                         .hasAnyRole(USER, ADMIN, UBS_EMPLOYEE, MODERATOR, EMPLOYEE)
-                        .requestMatchers(HttpMethod.GET,
+                        .requestMatchers(HttpMethod.GET, USER_LINK,
                                 "/user/all",
                                 "/user/roles",
                                 "/user/findUserForManagement",
@@ -204,6 +204,7 @@ public class SecurityConfig {
                         .hasAnyRole(UBS_EMPLOYEE)
                         .requestMatchers(HttpMethod.POST,
                                 "/user/filter",
+                                "/user/search",
                                 "/ownSecurity/register")
                         .hasAnyRole(ADMIN)
                         .requestMatchers(HttpMethod.PATCH,
