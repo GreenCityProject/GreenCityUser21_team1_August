@@ -1,9 +1,5 @@
 package greencity.security.service;
 
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Optional;
-
 import greencity.constant.AppConstant;
 import greencity.entity.Language;
 import greencity.entity.User;
@@ -23,6 +19,10 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Optional;
+
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -40,6 +40,7 @@ public class CustomOAuth2UserServiceImpl extends OidcUserService implements Cust
     }
 
     @Transactional
+    @Override
     public OidcUser processOidcUser(OidcUser oidcUser) {
         Map<String, Object> attributes = oidcUser.getAttributes();
 
@@ -67,7 +68,7 @@ public class CustomOAuth2UserServiceImpl extends OidcUserService implements Cust
                 ? attributes.get("refresh_token_key").toString()
                 : generateDefaultRefreshTokenKey();
 
-        User user = createUser(name, email, refreshTokenKey);
+        createUser(name, email, refreshTokenKey);
         log.info("Created new user with email: {}", email);
 
         return oidcUser;
