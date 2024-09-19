@@ -4,6 +4,7 @@ import greencity.ModelUtils;
 import greencity.dto.category.CategoryDto;
 import greencity.dto.econews.AddEcoNewsDtoResponse;
 import greencity.dto.econews.EcoNewsForSendEmailDto;
+import greencity.dto.event.EventSendEmailDto;
 import greencity.dto.newssubscriber.NewsSubscriberResponseDto;
 import greencity.dto.notification.NotificationDto;
 import greencity.dto.place.PlaceNotificationDto;
@@ -28,6 +29,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -200,4 +202,29 @@ class EmailServiceImplTest {
         NotificationDto dto = NotificationDto.builder().title("title").body("body").build();
         assertThrows(NotFoundException.class, () -> service.sendNotificationByEmail(dto, "test@gmail.com"));
     }
+
+    @Test
+    void sendCreatedEventForAuthorTest() {
+        // Mocking userRepo to return a user
+        User user = User.builder().build();
+        when(userRepo.findByEmail(anyString())).thenReturn(Optional.of(user));
+
+        // Initialize EventSendEmailDto inside the test
+        EventSendEmailDto eventSendEmailDto = EventSendEmailDto.builder()
+                .secureToken("testSecureToken")
+                .author(PlaceAuthorDto.builder()
+                        .email("author.email@gmail.com")
+                        .name("Test Author")
+                        .build())
+                .eventTitle("Test Event Title")
+                .description("Test event description")
+                .build();
+
+        // Act
+        service.sendCreatedEventForAuthor(eventSendEmailDto);
+
+        // Assert
+        verify(javaMailSender).createMimeMessage();
+    }
+
 }
