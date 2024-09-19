@@ -84,7 +84,7 @@ public class CustomOAuth2UserServiceImpl extends OidcUserService implements Cust
                 .role(Role.ROLE_USER)
                 .refreshTokenKey(refreshTokenKey)
                 .lastActivityTime(LocalDateTime.now())
-                .userStatus(UserStatus.CREATED)
+                .userStatus(UserStatus.ACTIVATED)
                 .emailNotification(EmailNotification.DISABLED)
                 .rating(AppConstant.DEFAULT_RATING)
                 .language(Language.builder()
