@@ -14,6 +14,7 @@ import greencity.dto.user.*;
 import greencity.enums.EmailNotification;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
+import greencity.exception.exceptions.WrongIdException;
 import greencity.service.EmailService;
 import greencity.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -209,7 +210,7 @@ public class UserController {
         @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
     })
     @GetMapping
-    public ResponseEntity<UserUpdateDto> getUserByPrincipal(@ApiIgnore Principal principal) {
+    public ResponseEntity<UserUpdateDto> getUserByPrincipal(@ApiIgnore @AuthenticationPrincipal Principal principal) {
         String email = principal.getName();
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserUpdateDtoByEmail(email));
     }
@@ -230,7 +231,7 @@ public class UserController {
     })
     @PatchMapping
     public ResponseEntity<UserUpdateDto> updateUser(@Valid @RequestBody UserUpdateDto dto,
-        @ApiIgnore Principal principal) {
+                                                    @ApiIgnore @AuthenticationPrincipal Principal principal) {
         String email = principal.getName();
         return ResponseEntity.status(HttpStatus.OK).body(userService.update(dto, email));
     }
@@ -312,11 +313,10 @@ public class UserController {
     })
     @PatchMapping(path = "/deleteProfilePicture")
     public ResponseEntity<HttpStatus> deleteUserProfilePicture(
-            @ApiIgnore Principal principal) {
+            @ApiIgnore @AuthenticationPrincipal Principal principal) {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
         String email = principal.getName();
         userService.deleteUserProfilePicture(email);
         return ResponseEntity.status(HttpStatus.OK).build();
@@ -378,10 +378,13 @@ public class UserController {
     })
     @GetMapping("isOnline/{userId}/")
     public ResponseEntity<Boolean> checkIfTheUserIsOnline(
-        @Parameter(description = "Id of the user. Cannot be empty.") @PathVariable Long userId) {
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .body(userService.checkIfTheUserIsOnline(userId));
+            @Parameter(description = "Id of the user. Cannot be empty.") @PathVariable Long userId) {
+        try {
+            boolean isOnline = userService.checkIfTheUserIsOnline(userId);
+            return ResponseEntity.status(HttpStatus.OK).body(isOnline);
+        } catch (WrongIdException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
     }
 
     /**
