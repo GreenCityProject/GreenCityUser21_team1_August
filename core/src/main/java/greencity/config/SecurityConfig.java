@@ -132,7 +132,7 @@ public class SecurityConfig {
                                 "/ownSecurity/signIn",
                                 "/ownSecurity/updatePassword")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET,
+                        .requestMatchers(HttpMethod.GET, USER_LINK ,
                                 "/user/shopping-list-items/habits/{habitId}/shopping-list",
                                 "/user/{userId}/{habitId}/custom-shopping-list-items/available",
                                 "/user/{userId}/profile/", "/user/isOnline/{userId}/",
