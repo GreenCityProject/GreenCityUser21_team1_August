@@ -161,6 +161,7 @@ public class SecurityConfig {
                                 "/email/sendReport",
                                 "/email/sendHabitNotification",
                                 "/email/addEcoNews",
+                                "/email/addEvent",
                                 "/email/changePlaceStatus",
                                 "/email/general/notification")
                         .hasAnyRole(USER, ADMIN, UBS_EMPLOYEE, MODERATOR, EMPLOYEE)

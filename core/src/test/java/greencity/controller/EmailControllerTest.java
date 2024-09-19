@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import greencity.dto.econews.EcoNewsForSendEmailDto;
+import greencity.dto.event.EventSendEmailDto;
 import greencity.dto.notification.NotificationDto;
 import greencity.dto.violation.UserViolationMailDto;
 import greencity.message.SendChangePlaceStatusEmailMessage;
@@ -125,6 +126,50 @@ class EmailControllerTest {
         verify(emailService).sendHabitNotification(notification.getName(), notification.getEmail());
     }
 
+    @Test
+    void sendCreatedEventForAuthorTest() throws Exception {
+        // Sample event data in JSON format
+        String content = "{" +
+                "\"secureToken\":\"secureTokenValue\"," +
+                "\"author\":{\"email\":\"author.email@gmail.com\"}," +
+                "\"eventTitle\":\"Event Title\"," +
+                "\"description\":\"Description of the event\"" +
+                "}";
+
+        // Perform POST request for adding event
+        mockPerform(content, "/addEvent");
+
+        // Convert JSON content to DTO object
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        EventSendEmailDto eventSendEmailDto = objectMapper.readValue(content, EventSendEmailDto.class);
+
+        // Verify that email service method
+        verify(emailService).sendCreatedEventForAuthor(eventSendEmailDto);
+    }
+
+    @Test
+    void sendCreatedEventForAuthor_WithEncodingException() throws Exception {
+        // Invalid email to simulate encoding exception
+        String content = "{" +
+                "\"secureToken\":\"secureTokenValue\"," +
+                "\"author\":{\"email\":\"invalid-email-%\"}," +
+                "\"eventTitle\":\"Event Title\"," +
+                "\"description\":\"Description of the event\"" +
+                "}";
+
+        // Perform POST request
+        mockPerform(content, "/addEvent");
+
+        // Convert JSON content to DTO object
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        EventSendEmailDto eventSendEmailDto = objectMapper.readValue(content, EventSendEmailDto.class);
+
+        // Verify that email service method
+        verify(emailService).sendCreatedEventForAuthor(eventSendEmailDto);
+    }
+
     private void mockPerform(String content, String subLink) throws Exception {
         mockMvc.perform(post(LINK + subLink)
             .contentType(MediaType.APPLICATION_JSON)
@@ -164,4 +209,10 @@ class EmailControllerTest {
         NotificationDto notification = new ObjectMapper().readValue(content, NotificationDto.class);
         verify(emailService).sendNotificationByEmail(notification, email);
     }
+
+
+
+
+
+
 }
