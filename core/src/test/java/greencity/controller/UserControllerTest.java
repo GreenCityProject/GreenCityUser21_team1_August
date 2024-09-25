@@ -37,11 +37,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -57,6 +52,8 @@ import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequ
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -287,14 +284,26 @@ class UserControllerTest {
     }
 
     @Test
-    void deleteUserProfilePictureTest() throws Exception {
+    void deleteUserProfilePicture_WithValidPrincipal_ProfilePictureDeleted() throws Exception {
+        // Arrange
         Principal principal = mock(Principal.class);
-        when(principal.getName()).thenReturn("test@email.com");
-        mockMvc.perform(patch(userLink + "/deleteProfilePicture")
-            .principal(principal))
-            .andExpect(status().isOk());
+        when(principal.getName()).thenReturn("andriy123@gmail.com");
 
-        verify(userService, times(1)).deleteUserProfilePicture("test@email.com");
+        // Act
+        mockMvc.perform(patch("/user/deleteProfilePicture")
+                        .principal(principal))
+                .andExpect(status().isOk());
+
+        verify(userService, times(1)).deleteUserProfilePicture("andriy123@gmail.com");
+    }
+
+    @Test
+    void deleteUserProfilePicture_PrincipalIsNull_ReturnsUnauthorized() throws Exception {
+        // Act
+        mockMvc.perform(patch("/user/deleteProfilePicture"))
+                .andExpect(status().isUnauthorized());
+
+        verify(userService, never()).deleteUserProfilePicture(anyString());
     }
 
     @Test
