@@ -40,6 +40,8 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -165,8 +167,22 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserVO findByEmail(String email) {
+        Pattern EMAIL_PATTERN = Pattern.compile(
+                "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
+            throw new BadRequestException("Wrong format of email");
+        }
+
         Optional<User> optionalUser = userRepo.findByEmail(email);
-        return optionalUser.isEmpty() ? null : modelMapper.map(optionalUser.get(), UserVO.class);
+
+        if (optionalUser.isEmpty()) {
+            throw new NotFoundException(ErrorMessage.USER_NOT_FOUND_BY_EMAIL);
+        }
+
+        return modelMapper.map(optionalUser.get(), UserVO.class);
     }
 
     /**
