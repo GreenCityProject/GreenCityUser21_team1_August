@@ -15,6 +15,9 @@ import greencity.enums.EmailNotification;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
 import greencity.exception.handler.ValidationExceptionDto;
+import greencity.exception.exceptions.BadUpdateRequestException;
+import greencity.exception.exceptions.LowRoleLevelException;
+import greencity.exception.exceptions.WrongIdException;
 import greencity.service.EmailService;
 import greencity.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,23 +27,30 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import springfox.documentation.annotations.ApiIgnore;
+
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
@@ -113,6 +123,16 @@ public class UserController {
 
     private boolean isRoleEnumValue(String value) {
         return Arrays.stream(Role.values()).anyMatch(it -> it.name().equals(value));
+    public ResponseEntity<UserRoleDto> updateRole(
+            @PathVariable Long id,
+            @NotNull @RequestBody Map<String, String> body,
+            @ApiIgnore Principal principal) {
+        Role role = Role.valueOf(body.get("role"));
+        UserRoleDto userRoleDto = new UserRoleDto(id, role);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        userService.updateRole(
+                                userRoleDto.getId(), userRoleDto.getRole(), principal.getName()));
     }
 
     /**
@@ -239,6 +259,7 @@ public class UserController {
     })
     @PatchMapping
     public ResponseEntity<UserUpdateDto> updateUser(@Valid @RequestBody UserUpdateDto dto,
+        @ApiIgnore @AuthenticationPrincipal Principal principal) {
                                                     @ApiIgnore @AuthenticationPrincipal Principal principal) {
         String email = principal.getName();
         return ResponseEntity.status(HttpStatus.OK).body(userService.update(dto, email));
@@ -267,7 +288,7 @@ public class UserController {
     }
 
     /**
-     * Counts all users by user {@link UserStatus} ACTIVATED.
+     * Counts all users by user {@link UserStatus} ACTIVATED
      *
      * @return amount of users with {@link UserStatus} ACTIVATED.
      * @author Shevtsiv Rostyslav
@@ -299,10 +320,15 @@ public class UserController {
     })
     @PatchMapping(path = "/profilePicture")
     public ResponseEntity<HttpStatus> updateUserProfilePicture(
+        @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
+            @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
+        Principal principal) {
             @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
             @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
             @ApiIgnore @AuthenticationPrincipal Principal principal) {
         String email = principal.getName();
+            @ApiIgnore Authentication authentication) {
+        String email = (String) authentication.getPrincipal();
         userService.updateUserProfilePicture(image, email, base64);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -322,6 +348,9 @@ public class UserController {
     @PatchMapping(path = "/deleteProfilePicture")
     public ResponseEntity<HttpStatus> deleteUserProfilePicture(
             @ApiIgnore @AuthenticationPrincipal Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         String email = principal.getName();
         userService.deleteUserProfilePicture(email);
         return ResponseEntity.status(HttpStatus.OK).build();
@@ -387,6 +416,12 @@ public class UserController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(userService.checkIfTheUserIsOnline(userId));
+        try {
+            boolean isOnline = userService.checkIfTheUserIsOnline(userId);
+            return ResponseEntity.status(HttpStatus.OK).body(isOnline);
+        } catch (WrongIdException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
     }
 
     /**
@@ -404,6 +439,17 @@ public class UserController {
     @GetMapping("/{userId}/profileStatistics/")
     public ResponseEntity<UserProfileStatisticsDto> getUserProfileStatistics(
             @Parameter(description = "Id of current user. Cannot be empty.") @PathVariable @CurrentUserId Long userId) {
+            @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
+    })
+    @GetMapping("/{userId}/profileStatistics/")
+    public ResponseEntity<UserProfileStatisticsDto> getUserProfileStatistics(
+            @PathVariable Long userId,
+            @Parameter(description = "Current authenticated user." , hidden = true)
+            @CurrentUser UserVO currentUser) {
+
+        if (!currentUser.getId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.status(HttpStatus.OK)
                 .body(userService.getUserProfileStatistics(userId));
     }
@@ -421,8 +467,9 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
     })
     @GetMapping("/findByEmail")
-    public ResponseEntity<UserVO> findByEmail(@RequestParam String email) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.findByEmail(email));
+    public ResponseEntity<UserVO> findByEmail(@RequestParam @Email String email) {
+        UserVO user = userService.findByEmail(email);
+        return ResponseEntity.status(HttpStatus.OK).body(user);
     }
 
     /**
@@ -436,9 +483,22 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
             @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
             @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+        @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
+        @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
+        @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+            @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND)
     })
     @GetMapping("/findById")
     public ResponseEntity<UserVO> findById(@RequestParam Long id) {
+        Optional<UserVO> optionalUser = Optional.ofNullable(userService.findById(id));
+        if (optionalUser.isEmpty()) {
+            throw new WrongIdException(STR."User with id \{id} not found");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(optionalUser.get());
+        Optional<UserVO> user = Optional.ofNullable(userService.findById(id));
+        if (user.isEmpty()) {
+            throw new WrongIdException(STR."User with id \{id} not found");
+        }
         return ResponseEntity.status(HttpStatus.OK).body(userService.findById(id));
     }
 
@@ -459,6 +519,12 @@ public class UserController {
     @ApiPageable
     public ResponseEntity<PageableAdvancedDto<UserManagementDto>> findUserForManagementByPage(
             @ApiIgnore Pageable pageable) {
+        @RequestParam(required = false) Integer page,
+        @RequestParam(required = false) Integer size){
+        if (page == null || page < 0 || size == null || size <= 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+        Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.status(HttpStatus.OK).body(userService.findUserForManagementByPage(pageable));
     }
 
@@ -490,7 +556,11 @@ public class UserController {
      * @author Orest Mamchuk
      */
     @Operation(summary = "update via UserManagement")
-    @ApiResponses(value = @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+            @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN),
+            @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND)
+    })
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public void updateUserManagement(
@@ -567,6 +637,8 @@ public class UserController {
     })
     @PutMapping("/updateUserLastActivityTime/{date}")
     public ResponseEntity<Object> updateUserLastActivityTime(@ApiIgnore @CurrentUser UserVO userVO,
+        @PathVariable(value = "date") @DateTimeFormat(
+            pattern = "yyyy-MM-dd.HH:mm:ss.SSSSSS") LocalDateTime userLastActivityTime) {
                                                              @PathVariable(value = "date") @DateTimeFormat(
                                                                      pattern = "yyyy-MM-dd.HH:mm:ss.SSSSSS") LocalDateTime userLastActivityTime) {
         userService.updateUserLastActivityTime(userVO.getId(), userLastActivityTime);
@@ -587,6 +659,8 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
             @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
             @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
+            @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN),
+            @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND)
     })
     @PutMapping("/deactivate")
     public ResponseEntity<ResponseEntity.BodyBuilder> deactivateUser(@RequestParam Long id,
@@ -608,6 +682,7 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
             @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
+            @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED)
             @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
     })
     @GetMapping("/lang")
@@ -650,6 +725,9 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
             @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
             @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
+        @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
+        @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
+        @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED)
     })
     @PutMapping("/language/{languageId}")
     public ResponseEntity<Object> setUserLanguage(@ApiIgnore @CurrentUser UserVO userVO,

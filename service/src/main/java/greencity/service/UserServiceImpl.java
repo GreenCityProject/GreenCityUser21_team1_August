@@ -1,31 +1,33 @@
 package greencity.service;
 
-import greencity.constant.UpdateConstants;
-import greencity.dto.ubs.UbsTableCreationDto;
-import greencity.dto.user.*;
-import greencity.entity.Language;
-import greencity.entity.UserDeactivationReason;
-import greencity.filters.SearchCriteria;
 import greencity.client.RestClient;
 import greencity.constant.ErrorMessage;
 import greencity.constant.LogMessage;
+import greencity.constant.UpdateConstants;
 import greencity.dto.PageableAdvancedDto;
 import greencity.dto.PageableDto;
 import greencity.dto.filter.FilterUserDto;
 import greencity.dto.shoppinglist.CustomShoppingListItemResponseDto;
+import greencity.dto.ubs.UbsTableCreationDto;
+import greencity.dto.user.*;
+import greencity.entity.Language;
 import greencity.entity.User;
+import greencity.entity.UserDeactivationReason;
 import greencity.entity.VerifyEmail;
 import greencity.enums.EmailNotification;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
 import greencity.exception.exceptions.*;
+import greencity.filters.SearchCriteria;
 import greencity.filters.UserSpecification;
 import greencity.repository.LanguageRepo;
 import greencity.repository.UserDeactivationRepo;
 import greencity.repository.UserRepo;
 import greencity.repository.options.UserFilter;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.service.spi.ServiceException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,11 +37,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -70,7 +78,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserVO save(UserVO userVO) {
         User user = modelMapper.map(userVO, User.class);
-        return modelMapper.map(userRepo.save(user), UserVO.class);
+        try {
+            User savedUser = userRepo.save(user);
+            return modelMapper.map(savedUser, UserVO.class);
+        } catch (ConstraintViolationException ex) {
+            // Log the original exception for debugging
+            log.error("Validation error while saving user", ex);
+            throw new BadRequestException(ErrorMessage.BAD_PASSWORD);
+        } catch (Exception ex) {
+            // Handle other potential exceptions
+            log.error("Unexpected error while saving user", ex);
+            throw new ServiceException("An unexpected error occurred while saving the user.");
+        }
     }
 
     /**
@@ -161,8 +180,22 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserVO findByEmail(String email) {
+        Pattern EMAIL_PATTERN = Pattern.compile(
+                "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
+            throw new BadRequestException("Wrong format of email");
+        }
+
         Optional<User> optionalUser = userRepo.findByEmail(email);
-        return optionalUser.isEmpty() ? null : modelMapper.map(optionalUser.get(), UserVO.class);
+
+        if (optionalUser.isEmpty()) {
+            throw new NotFoundException(ErrorMessage.USER_NOT_FOUND_BY_EMAIL);
+        }
+
+        return modelMapper.map(optionalUser.get(), UserVO.class);
     }
 
     /**
@@ -474,9 +507,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserVO updateUserProfilePicture(MultipartFile image, String email,
         String base64) {
-        User user = userRepo
-            .findByEmail(email)
-            .orElseThrow(() -> new WrongEmailException(ErrorMessage.USER_NOT_FOUND_BY_EMAIL + email));
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new WrongEmailException(ErrorMessage.USER_NOT_FOUND_BY_EMAIL + email));
         if (base64 != null) {
             image = modelMapper.map(base64, MultipartFile.class);
         }
@@ -589,15 +621,17 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserProfileStatisticsDto getUserProfileStatistics(Long userId) {
+        if (userRepo.findById(userId).isEmpty()) {
+            throw new NotFoundException(String.format("User with id: %d not found", userId));
+        }
         Long amountOfPublishedNewsByUserId = restClient.findAmountOfPublishedNews(userId);
         Long amountOfAcquiredHabitsByUserId = restClient.findAmountOfAcquiredHabits(userId);
         Long amountOfHabitsInProgressByUserId = restClient.findAmountOfHabitsInProgress(userId);
-
         return UserProfileStatisticsDto.builder()
-            .amountPublishedNews(amountOfPublishedNewsByUserId)
-            .amountHabitsAcquired(amountOfAcquiredHabitsByUserId)
-            .amountHabitsInProgress(amountOfHabitsInProgressByUserId)
-            .build();
+                .amountPublishedNews(amountOfPublishedNewsByUserId)
+                .amountHabitsAcquired(amountOfAcquiredHabitsByUserId)
+                .amountHabitsInProgress(amountOfHabitsInProgressByUserId)
+                .build();
     }
 
     @Override
