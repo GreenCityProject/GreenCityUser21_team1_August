@@ -43,6 +43,7 @@ import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
@@ -438,9 +439,14 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
         @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
         @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+            @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND)
     })
     @GetMapping("/findById")
     public ResponseEntity<UserVO> findById(@RequestParam Long id) {
+        Optional<UserVO> user = Optional.ofNullable(userService.findById(id));
+        if (user.isEmpty()) {
+            throw new WrongIdException(STR."User with id \{id} not found");
+        }
         return ResponseEntity.status(HttpStatus.OK).body(userService.findById(id));
     }
 
