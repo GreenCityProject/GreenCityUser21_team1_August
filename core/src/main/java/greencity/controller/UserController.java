@@ -14,6 +14,8 @@ import greencity.dto.user.*;
 import greencity.enums.EmailNotification;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
+import greencity.exception.exceptions.BadUpdateRequestException;
+import greencity.exception.exceptions.LowRoleLevelException;
 import greencity.exception.exceptions.WrongIdException;
 import greencity.service.EmailService;
 import greencity.service.UserService;
@@ -31,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -292,10 +295,10 @@ public class UserController {
     })
     @PatchMapping(path = "/profilePicture")
     public ResponseEntity<HttpStatus> updateUserProfilePicture(
-        @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
-        @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
-        @ApiIgnore @AuthenticationPrincipal Principal principal) {
-        String email = principal.getName();
+            @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
+            @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
+            @ApiIgnore Authentication authentication) {
+        String email = (String) authentication.getPrincipal();
         userService.updateUserProfilePicture(image, email, base64);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
