@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -115,6 +116,14 @@ class EmailControllerTest {
     @Test
     void sendHabitNotification() throws Exception {
         String content = "{" +
+                "\"email\":\"test@example.com\"," +
+                "\"name\":\"Nazar\"" +
+                "}";
+
+        mockMvc.perform(post(LINK + "/sendHabitNotification")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(content))
+                .andExpect(status().isOk());
                 "\"email\":\"string\"," +
                 "\"name\":\"string\"" +
                 "}";
@@ -124,7 +133,7 @@ class EmailControllerTest {
         SendHabitNotification notification =
                 new ObjectMapper().readValue(content, SendHabitNotification.class);
 
-        verify(emailService).sendHabitNotification(notification.getName(), notification.getEmail());
+        verify(emailService).sendHabitNotification("Nazar", "test@example.com");
     }
 
     @Test
