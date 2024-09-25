@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/xhtml" lang="EN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>New Comment Added</title>
+    <style type="text/css">
+        @media screen {
+            @font-face {
+                font-family: 'Source Sans Pro';
+                font-style: normal;
+                font-weight: 400;
+                src: local('Source Sans Pro Regular'), local('SourceSansPro-Regular'),
+                url(https://fonts.gstatic.com/s/sourcesanspro/v10/ODelI1aHBYDBqgeIAH2zlBM0YzuT7MdOe03otPbuUS0.woff) format('woff');
+            }
+        }
+
+        body, table, td, a {
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        table, td {
+            mso-table-rspace: 0pt;
+            mso-table-lspace: 0pt;
+        }
+
+        img {
+            -ms-interpolation-mode: bicubic;
+        }
+
+        a[x-apple-data-detectors] {
+            font-family: inherit !important;
+            font-size: inherit !important;
+            font-weight: inherit !important;
+            line-height: inherit !important;
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+
+        body {
+            width: 100% !important;
+            height: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        table {
+            border-collapse: collapse !important;
+        }
+
+        .background {
+            background-color: #f4f4f4;
+        }
+
+        .email-content {
+            background-color: #ffffff;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #13aa57;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .content {
+            font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 24px;
+            color: #333333;
+            padding: 20px;
+        }
+
+        .footer {
+            font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            line-height: 20px;
+            color: #666666;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            color: white;
+            background-color: #13aa57;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        .btn:hover {
+            background-color: #107b43;
+        }
+    </style>
+</head>
+<body class="background">
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="center" class="background">
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="email-content">
+                <!-- Header -->
+                <tr>
+                    <td class="header">
+                        New Comment on Your Event
+                    </td>
+                </tr>
+                <!-- Body -->
+                <tr>
+                    <td class="content">
+                        <p>Dear <span th:text="${event.author.name}">Author Name</span>,</p>
+                        <p>A new comment has been added to your event "<span th:text="${event.eventTitle}">Event Title</span>".</p>
+
+                        <p><strong>Comment:</strong></p>
+                        <p><span th:text="${event.commentText}">Comment text</span></p>
+
+                        <p>Link to your comment:</p>
+
+                        <p>
+                             <a href="http://localhost:8060/email/code-stub.html" class="btn">View Comment</a>
+                        </p>
+
+                        <p>Thank you for using our service!</p>
+
+                        <p>Sincerely, <br/> The GreenCity Team</p>
+                    </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                    <td class="footer">
+                        &copy; 2024 GreenCity. All Rights Reserved.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

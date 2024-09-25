@@ -14,6 +14,9 @@ import greencity.dto.user.*;
 import greencity.enums.EmailNotification;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
+import greencity.exception.exceptions.BadUpdateRequestException;
+import greencity.exception.exceptions.LowRoleLevelException;
+import greencity.exception.exceptions.WrongIdException;
 import greencity.service.EmailService;
 import greencity.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -231,6 +235,7 @@ public class UserController {
     @PatchMapping
     public ResponseEntity<UserUpdateDto> updateUser(@Valid @RequestBody UserUpdateDto dto,
         @ApiIgnore @AuthenticationPrincipal Principal principal) {
+                                                    @ApiIgnore @AuthenticationPrincipal Principal principal) {
         String email = principal.getName();
         return ResponseEntity.status(HttpStatus.OK).body(userService.update(dto, email));
     }
@@ -290,10 +295,10 @@ public class UserController {
     })
     @PatchMapping(path = "/profilePicture")
     public ResponseEntity<HttpStatus> updateUserProfilePicture(
-        @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
-        @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
-        @ApiIgnore @AuthenticationPrincipal Principal principal) {
-        String email = principal.getName();
+            @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
+            @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
+            @ApiIgnore Authentication authentication) {
+        String email = (String) authentication.getPrincipal();
         userService.updateUserProfilePicture(image, email, base64);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -312,7 +317,10 @@ public class UserController {
     })
     @PatchMapping(path = "/deleteProfilePicture")
     public ResponseEntity<HttpStatus> deleteUserProfilePicture(
-        @ApiIgnore @AuthenticationPrincipal Principal principal) {
+            @ApiIgnore @AuthenticationPrincipal Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         String email = principal.getName();
         userService.deleteUserProfilePicture(email);
         return ResponseEntity.status(HttpStatus.OK).build();
@@ -374,10 +382,13 @@ public class UserController {
     })
     @GetMapping("isOnline/{userId}/")
     public ResponseEntity<Boolean> checkIfTheUserIsOnline(
-        @Parameter(description = "Id of the user. Cannot be empty.") @PathVariable Long userId) {
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .body(userService.checkIfTheUserIsOnline(userId));
+            @Parameter(description = "Id of the user. Cannot be empty.") @PathVariable Long userId) {
+        try {
+            boolean isOnline = userService.checkIfTheUserIsOnline(userId);
+            return ResponseEntity.status(HttpStatus.OK).body(isOnline);
+        } catch (WrongIdException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
     }
 
     /**
@@ -574,10 +585,11 @@ public class UserController {
      */
     @Operation(summary = "Deactivate user indicating the list of reasons for deactivation")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
-        @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
-        @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
-        @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
+            @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
+            @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
+            @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+            @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN),
+            @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND)
     })
     @PutMapping("/deactivate")
     public ResponseEntity<ResponseEntity.BodyBuilder> deactivateUser(@RequestParam Long id,
