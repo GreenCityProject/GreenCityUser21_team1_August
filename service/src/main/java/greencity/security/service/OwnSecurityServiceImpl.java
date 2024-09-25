@@ -292,6 +292,10 @@ public class OwnSecurityServiceImpl implements OwnSecurityService {
             throw new EmailNotVerified(ErrorMessage.USER_EMAIL_IS_NOT_VERIFIED);
         }
 
+        if (!passwordEncoder.matches(updatePasswordDto.getOldPassword(), user.getOwnSecurity().getPassword())) {
+            throw new WrongPasswordException(ErrorMessage.INCORRECT_PASSWORD);
+        }
+
         if (!updatePasswordDto.getPassword().equals(updatePasswordDto.getConfirmPassword())) {
             throw new PasswordsDoNotMatchesException(ErrorMessage.PASSWORDS_DO_NOT_MATCH);
         }
