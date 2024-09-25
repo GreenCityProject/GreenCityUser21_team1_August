@@ -1,11 +1,13 @@
 package greencity.controller;
 
+import greencity.constant.ErrorMessage;
 import greencity.constant.HttpStatuses;
 import greencity.dto.econews.EcoNewsForSendEmailDto;
 import greencity.dto.event.EventCommentSendEmailDto;
 import greencity.dto.event.EventSendEmailDto;
 import greencity.dto.notification.NotificationDto;
 import greencity.dto.violation.UserViolationMailDto;
+import greencity.exception.exceptions.BadVerifyEmailTokenException;
 import greencity.message.SendChangePlaceStatusEmailMessage;
 import greencity.message.SendHabitNotification;
 import greencity.message.SendReportEmailMessage;
@@ -19,6 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
+
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/email")
@@ -82,7 +87,26 @@ public class EmailController {
      * @param message - object with all necessary data for sending email
      * @author Taras Kavkalo
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
+            @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
+            @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+            @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND),
+    })
     @PostMapping("/changePlaceStatus")
+    public ResponseEntity<Object> changePlaceStatus(@Valid @RequestBody SendChangePlaceStatusEmailMessage message, @ApiIgnore Principal principal) {
+
+        if (principal == null) {
+            throw new BadVerifyEmailTokenException(ErrorMessage.USER_IS_UNAUTHORIZED);
+        }
+
+        emailService.sendChangePlaceStatusEmail(
+                message.getAuthorFirstName(),
+                message.getPlaceName(),
+                message.getPlaceStatus(),
+                message.getAuthorEmail()
+        );
+        return ResponseEntity.ok().build();
     public ResponseEntity<Object> changePlaceStatus(@RequestBody SendChangePlaceStatusEmailMessage message) {
         emailService.sendChangePlaceStatusEmail(message.getAuthorFirstName(), message.getPlaceName(),
                 message.getPlaceStatus(), message.getAuthorEmail());

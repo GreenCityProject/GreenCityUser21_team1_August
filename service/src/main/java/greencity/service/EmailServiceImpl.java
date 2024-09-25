@@ -77,6 +77,13 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendChangePlaceStatusEmail(String authorName, String placeName,
+        String placeStatus, String authorEmail) {
+
+        Optional<User> optionalUser = userRepo.findByEmail(authorEmail);
+        if (optionalUser.isEmpty()) {
+            throw new NotFoundException(ErrorMessage.USER_NOT_FOUND_BY_EMAIL + authorEmail);
+        }
+
                                            String placeStatus, String authorEmail) {
         log.info(LogMessage.IN_SEND_CHANGE_PLACE_STATUS_EMAIL, placeName);
         Map<String, Object> model = new HashMap<>();
