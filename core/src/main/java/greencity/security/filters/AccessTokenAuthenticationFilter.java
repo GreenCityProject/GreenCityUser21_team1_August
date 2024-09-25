@@ -9,10 +9,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
+
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,7 +39,7 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
      * Constructor.
      */
     public AccessTokenAuthenticationFilter(JwtTool jwtTool, AuthenticationManager authenticationManager,
-        UserService userService) {
+                                           UserService userService) {
         this.jwtTool = jwtTool;
         this.authenticationManager = authenticationManager;
         this.userService = userService;
@@ -43,9 +47,9 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
 
     private String getTokenFromCookies(Cookie[] cookies) {
         return Arrays.stream(cookies)
-            .filter(c -> c.getName().equals("accessToken"))
-            .findFirst()
-            .map(Cookie::getValue).orElse(null);
+                .filter(c -> c.getName().equals("accessToken"))
+                .findFirst()
+                .map(Cookie::getValue).orElse(null);
     }
 
     private String extractToken(HttpServletRequest request) {
@@ -54,7 +58,6 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
         if (cookies != null && uri.startsWith("/management")) {
             return getTokenFromCookies(cookies);
         }
-
         return jwtTool.getTokenFromHttpServletRequest(request);
     }
 
@@ -68,16 +71,16 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     public void doFilterInternal(@SuppressWarnings("NullableProblems") HttpServletRequest request,
-        @SuppressWarnings("NullableProblems") HttpServletResponse response,
-        @SuppressWarnings("NullableProblems") FilterChain chain)
-        throws IOException, ServletException {
+                                 @SuppressWarnings("NullableProblems") HttpServletResponse response,
+                                 @SuppressWarnings("NullableProblems") FilterChain chain)
+            throws IOException, ServletException {
         String token = extractToken(request);
         log.info("token {}", token);
 
         if (token != null) {
             try {
                 Authentication authentication = authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken(token, ""));
+                        .authenticate(new UsernamePasswordAuthenticationToken(token, ""));
                 Optional<UserVO> user = userService.findNotDeactivatedByEmail((String) authentication.getPrincipal());
                 log.info("user {}", user);
                 if (user.isPresent()) {

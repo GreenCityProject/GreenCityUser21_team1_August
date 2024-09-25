@@ -3,6 +3,8 @@ package greencity.controller;
 import greencity.constant.ErrorMessage;
 import greencity.constant.HttpStatuses;
 import greencity.dto.econews.EcoNewsForSendEmailDto;
+import greencity.dto.event.EventCommentSendEmailDto;
+import greencity.dto.event.EventSendEmailDto;
 import greencity.dto.notification.NotificationDto;
 import greencity.dto.violation.UserViolationMailDto;
 import greencity.exception.exceptions.BadVerifyEmailTokenException;
@@ -43,6 +45,29 @@ public class EmailController {
     }
 
     /**
+     * Method for sending event creation notification to user.
+     *
+     * @param message - object with all necessary data for sending email about the created event.
+     */
+    @PostMapping("/addEvent")
+    public ResponseEntity<Object> addEvent(@RequestBody EventSendEmailDto message) {
+        emailService.sendCreatedEventForAuthor(message);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    /**
+     * Method for sending notification to user to whose Event,comment was added
+     *
+     * @param message - object with all necessary data for sending email
+     * @author Nazar Vavrushchak
+     */
+    @PostMapping("/addEventComment")
+    public ResponseEntity<Object> addEventComment(@RequestBody EventCommentSendEmailDto message) {
+        emailService.sendNotificationToTheOrganizerAboutTheComment(message);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    /**
      * Method for sending notification to userss who subscribed for updates about
      * added new places.
      *
@@ -52,7 +77,7 @@ public class EmailController {
     @PostMapping("/sendReport")
     public ResponseEntity<Object> sendReport(@RequestBody SendReportEmailMessage message) {
         emailService.sendAddedNewPlacesReportEmail(message.getSubscribers(), message.getCategoriesDtoWithPlacesDtoMap(),
-            message.getEmailNotification());
+                message.getEmailNotification());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
@@ -82,6 +107,10 @@ public class EmailController {
                 message.getAuthorEmail()
         );
         return ResponseEntity.ok().build();
+    public ResponseEntity<Object> changePlaceStatus(@RequestBody SendChangePlaceStatusEmailMessage message) {
+        emailService.sendChangePlaceStatusEmail(message.getAuthorFirstName(), message.getPlaceName(),
+                message.getPlaceStatus(), message.getAuthorEmail());
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     /**
@@ -92,7 +121,7 @@ public class EmailController {
      * @author Taras Kavkalo
      */
     @PostMapping("/sendHabitNotification")
-    public ResponseEntity<Object> sendHabitNotification(@RequestBody SendHabitNotification sendHabitNotification) {
+    public ResponseEntity<Object> sendHabitNotification(@Valid @RequestBody SendHabitNotification sendHabitNotification) {
         emailService.sendHabitNotification(sendHabitNotification.getName(), sendHabitNotification.getEmail());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -120,14 +149,14 @@ public class EmailController {
      */
     @Operation(summary = "Send notification to user via email")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
-        @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
-        @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
-        @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
+            @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
+            @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
+            @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+            @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
     })
     @PostMapping("/notification")
     public ResponseEntity<Object> sendUserNotification(@RequestBody NotificationDto notification,
-        @RequestParam("email") String email) {
+                                                       @RequestParam("email") String email) {
         emailService.sendNotificationByEmail(notification, email);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
