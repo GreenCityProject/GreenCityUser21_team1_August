@@ -14,6 +14,7 @@ import greencity.dto.user.*;
 import greencity.enums.EmailNotification;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
+import greencity.exception.handler.ValidationExceptionDto;
 import greencity.exception.exceptions.BadUpdateRequestException;
 import greencity.exception.exceptions.LowRoleLevelException;
 import greencity.exception.exceptions.WrongIdException;
@@ -46,6 +47,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -104,6 +106,23 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
     })
     @PatchMapping("{id}/role")
+    public ResponseEntity<Object> updateRole(
+            @PathVariable Long id,
+            @NotNull @RequestBody Map<String, String> body,
+            @ApiIgnore Principal principal) {
+        if (body.containsKey("role") && isRoleEnumValue(body.get("role"))) {
+            Role role = Role.valueOf(body.get("role"));
+            UserRoleDto userRoleDto = new UserRoleDto(id, role);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(
+                            userService.updateRole(
+                                    userRoleDto.getId(), userRoleDto.getRole(), principal.getName()));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ValidationExceptionDto("invalid values", "set only available roles"));
+    }
+
+    private boolean isRoleEnumValue(String value) {
+        return Arrays.stream(Role.values()).anyMatch(it -> it.name().equals(value));
     public ResponseEntity<UserRoleDto> updateRole(
             @PathVariable Long id,
             @NotNull @RequestBody Map<String, String> body,
@@ -620,7 +639,6 @@ public class UserController {
     public ResponseEntity<Object> updateUserLastActivityTime(@ApiIgnore @CurrentUser UserVO userVO,
         @PathVariable(value = "date") @DateTimeFormat(
             pattern = "yyyy-MM-dd.HH:mm:ss.SSSSSS") LocalDateTime userLastActivityTime) {
-
                                                              @PathVariable(value = "date") @DateTimeFormat(
                                                                      pattern = "yyyy-MM-dd.HH:mm:ss.SSSSSS") LocalDateTime userLastActivityTime) {
         userService.updateUserLastActivityTime(userVO.getId(), userLastActivityTime);
