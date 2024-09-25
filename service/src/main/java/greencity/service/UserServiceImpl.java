@@ -24,8 +24,10 @@ import greencity.repository.LanguageRepo;
 import greencity.repository.UserDeactivationRepo;
 import greencity.repository.UserRepo;
 import greencity.repository.options.UserFilter;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.service.spi.ServiceException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,7 +78,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserVO save(UserVO userVO) {
         User user = modelMapper.map(userVO, User.class);
-        return modelMapper.map(userRepo.save(user), UserVO.class);
+        try {
+            User savedUser = userRepo.save(user);
+            return modelMapper.map(savedUser, UserVO.class);
+        } catch (ConstraintViolationException ex) {
+            // Log the original exception for debugging
+            log.error("Validation error while saving user", ex);
+            throw new BadRequestException(ErrorMessage.BAD_PASSWORD);
+        } catch (Exception ex) {
+            // Handle other potential exceptions
+            log.error("Unexpected error while saving user", ex);
+            throw new ServiceException("An unexpected error occurred while saving the user.");
+        }
     }
 
     /**
@@ -608,15 +621,17 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserProfileStatisticsDto getUserProfileStatistics(Long userId) {
+        if (userRepo.findById(userId).isEmpty()) {
+            throw new NotFoundException(String.format("User with id: %d not found", userId));
+        }
         Long amountOfPublishedNewsByUserId = restClient.findAmountOfPublishedNews(userId);
         Long amountOfAcquiredHabitsByUserId = restClient.findAmountOfAcquiredHabits(userId);
         Long amountOfHabitsInProgressByUserId = restClient.findAmountOfHabitsInProgress(userId);
-
         return UserProfileStatisticsDto.builder()
-            .amountPublishedNews(amountOfPublishedNewsByUserId)
-            .amountHabitsAcquired(amountOfAcquiredHabitsByUserId)
-            .amountHabitsInProgress(amountOfHabitsInProgressByUserId)
-            .build();
+                .amountPublishedNews(amountOfPublishedNewsByUserId)
+                .amountHabitsAcquired(amountOfAcquiredHabitsByUserId)
+                .amountHabitsInProgress(amountOfHabitsInProgressByUserId)
+                .build();
     }
 
     @Override

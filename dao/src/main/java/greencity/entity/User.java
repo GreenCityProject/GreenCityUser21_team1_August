@@ -104,7 +104,7 @@ public class User {
     @Column(columnDefinition = "varchar(60)")
     private String uuid;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     private Language language;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

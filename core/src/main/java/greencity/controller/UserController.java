@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -301,6 +302,9 @@ public class UserController {
     })
     @PatchMapping(path = "/profilePicture")
     public ResponseEntity<HttpStatus> updateUserProfilePicture(
+        @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
+            @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
+        Principal principal) {
             @Parameter(description = "pass image as base64") @RequestPart(required = false) String base64,
             @Parameter(description = "Profile picture") @ImageValidation @RequestPart(required = false) MultipartFile image,
             @ApiIgnore @AuthenticationPrincipal Principal principal) {
@@ -442,8 +446,9 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
     })
     @GetMapping("/findByEmail")
-    public ResponseEntity<UserVO> findByEmail(@RequestParam String email) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.findByEmail(email));
+    public ResponseEntity<UserVO> findByEmail(@RequestParam @Email String email) {
+        UserVO user = userService.findByEmail(email);
+        return ResponseEntity.status(HttpStatus.OK).body(user);
     }
 
     /**
@@ -464,6 +469,11 @@ public class UserController {
     })
     @GetMapping("/findById")
     public ResponseEntity<UserVO> findById(@RequestParam Long id) {
+        Optional<UserVO> optionalUser = Optional.ofNullable(userService.findById(id));
+        if (optionalUser.isEmpty()) {
+            throw new WrongIdException(STR."User with id \{id} not found");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(optionalUser.get());
         Optional<UserVO> user = Optional.ofNullable(userService.findById(id));
         if (user.isEmpty()) {
             throw new WrongIdException(STR."User with id \{id} not found");
@@ -606,6 +616,9 @@ public class UserController {
     })
     @PutMapping("/updateUserLastActivityTime/{date}")
     public ResponseEntity<Object> updateUserLastActivityTime(@ApiIgnore @CurrentUser UserVO userVO,
+        @PathVariable(value = "date") @DateTimeFormat(
+            pattern = "yyyy-MM-dd.HH:mm:ss.SSSSSS") LocalDateTime userLastActivityTime) {
+
                                                              @PathVariable(value = "date") @DateTimeFormat(
                                                                      pattern = "yyyy-MM-dd.HH:mm:ss.SSSSSS") LocalDateTime userLastActivityTime) {
         userService.updateUserLastActivityTime(userVO.getId(), userLastActivityTime);
