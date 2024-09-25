@@ -234,6 +234,7 @@ public class UserController {
     })
     @PatchMapping
     public ResponseEntity<UserUpdateDto> updateUser(@Valid @RequestBody UserUpdateDto dto,
+        @ApiIgnore @AuthenticationPrincipal Principal principal) {
                                                     @ApiIgnore @AuthenticationPrincipal Principal principal) {
         String email = principal.getName();
         return ResponseEntity.status(HttpStatus.OK).body(userService.update(dto, email));
@@ -381,10 +382,13 @@ public class UserController {
     })
     @GetMapping("isOnline/{userId}/")
     public ResponseEntity<Boolean> checkIfTheUserIsOnline(
-        @Parameter(description = "Id of the user. Cannot be empty.") @PathVariable Long userId) {
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .body(userService.checkIfTheUserIsOnline(userId));
+            @Parameter(description = "Id of the user. Cannot be empty.") @PathVariable Long userId) {
+        try {
+            boolean isOnline = userService.checkIfTheUserIsOnline(userId);
+            return ResponseEntity.status(HttpStatus.OK).body(isOnline);
+        } catch (WrongIdException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
     }
 
     /**
